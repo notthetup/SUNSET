@@ -602,7 +602,22 @@ proc finish {} {
 		source "tcl_folder/printStat.tcl"
 
 	} else {
-
+		set rx_pkts 0
+		set sink_delay 0
+		set count_delay 0
+		for {set id 1} {$id <= $params(numNodes)} {incr id}  {
+			if { $params(sink) != $id } {
+				set rx_pkts [expr $rx_pkts + [$cbr_($id) getsentpkts]]
+				set aux     [$cbr_sink_($id) getftt]
+				if { $aux > 0 } {
+					set sink_delay [expr $sink_delay + $aux]
+					set count_delay [expr $count_delay + 1 ]
+				}
+			}
+		}
+		if { $count_delay > 0 } {
+			set sink_delay [expr double($sink_delay) / double($count_delay) ]
+		}
 		for {set id 1} {$id <= $params(numNodes)} {incr id}  {
 
 			set cbr_throughput   [$cbr_sink_($id) getthr]
@@ -617,10 +632,18 @@ proc finish {} {
 			set cbr_rxpkts       [$cbr_sink_($id) getrecvpkts]
 
 			puts "($id)      	app data pkts created       : $cbr_pkts"
-			puts "($id) 		app data pkts received      : $cbr_rxpkts"
+			if { $params(sink) != $id } {
+				puts "($id) 		app data pkts delivered     : $cbr_rxpkts"
+			} else {
+				puts "($id) 		app data pkts received     : $rx_pkts"			
+			}
 			puts "($id) 		throughput                  : $cbr_throughput"
 			puts "($id) 		normalized throughput       : [expr $cbr_throughput / (($params(pktDataSize) * 8.0) / $params(cbr_period))]"
-			puts "($id) 		delay                       : $cbr_delay"
+			if { $params(sink) != $id } {
+				puts "($id) 		delay                       : $cbr_delay"
+			} else {
+				puts "($id) 		delay recv pkts		    : $sink_delay"			
+			}
 			puts "($id) 		packet error rate           : $cbr_per"
 
 			puts "($id) 		residual energy          : [$energy($id) getResidualEnergy]"
