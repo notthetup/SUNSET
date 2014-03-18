@@ -245,6 +245,17 @@ int Sunset_Phy_Bellhop::command(int argc, const char * const * argv )
 			return TCL_OK;
 			
 		}
+
+		/* The "addToBlacklist" adds the specified node id to the black list. */
+		
+		if (strcmp(argv[1], "addToBlacklist") == 0) {
+			
+			blackList.insert(atoi(argv[2]));
+			
+			Sunset_Debug::debugInfo(3, phyAddress, "Sunset_Phy_Urick::command Blacklist %d", atoi(argv[2]));
+			
+			return (TCL_OK);
+		}
 	}
 	
 	return WossMPhyBpsk::command( argc, argv );
@@ -259,6 +270,8 @@ void Sunset_Phy_Bellhop::startTx(Packet* p) {
 	
 	double duration = 0;
 	
+	HDR_CMN(p)->prev_hop_ = phyAddress;
+
 	if ( use_energy ) {
 		
 		if ( state == IDLE ) {
@@ -342,6 +355,16 @@ void Sunset_Phy_Bellhop::startRx(Packet* p) {
 	double duration = 0.0;
 	double power = 0.0;
 	
+	if ( p != 0 ) {
+		
+		if ( blackList.find(HDR_CMN(p)->prev_hop_) != blackList.end() ) {
+		
+			Sunset_Debug::debugInfo(3, phyAddress, "Sunset_Phy_Bellhop::startRx blacklist %d", HDR_CMN(p)->prev_hop_);
+			
+			return;
+		}
+	}
+
 	Sunset_Debug::debugInfo(3, phyAddress, "Sunset_Phy_Bellhop::startRx - STATE %d", state);
 	
 	if ( state == IDLE ) {
@@ -416,6 +439,16 @@ void Sunset_Phy_Bellhop::endRx(Packet* p)
 {
 	double duration = 0;
 	
+	if ( p != 0 ) {
+		
+		if ( blackList.find(HDR_CMN(p)->prev_hop_) != blackList.end() ) {
+		
+			Sunset_Debug::debugInfo(3, phyAddress, "Sunset_Phy_Bellhop::endRx blacklist %d", HDR_CMN(p)->prev_hop_);
+			
+			return;
+		}
+	}
+
 	if ( state == START_RX && NOW == endRx_ ) {
 		
 		duration = NOW - startRx_;

@@ -98,6 +98,8 @@ public:
 		
 	int use_pkt_error;
 	int use_energy;
+
+	set<int> blackList;
 	
 };
 
