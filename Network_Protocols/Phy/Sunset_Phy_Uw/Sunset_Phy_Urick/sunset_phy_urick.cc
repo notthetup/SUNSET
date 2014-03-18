@@ -85,13 +85,13 @@ void Sunset_Phy_Urick::start()
 	
 	sid = Sunset_Information_Dispatcher::instance();
 	
-	sid_id = sid->register_module(getModuleAddress(), "PHY_URICK", this);
+	sid_id = sid->register_module(phyAddress, "PHY_URICK", this);
 	
 	lastPower = 0.0;
 	
 	if (sid != NULL) {
 		
-		sid->subscribe(getModuleAddress(), sid_id, "TX_POWER");
+		sid->subscribe(phyAddress, sid_id, "TX_POWER");
 	}
 	
 	if ( use_pkt_error ) {
@@ -206,7 +206,7 @@ int Sunset_Phy_Urick::command(int argc, const char * const * argv )
 			
 			use_pkt_error = atoi(argv[2]);
 			
-			Sunset_Debug::debugInfo(3, getModuleAddress(), "Sunset_Phy_Urick::command usePktErrorModel %d", use_pkt_error);
+			Sunset_Debug::debugInfo(3, phyAddress, "Sunset_Phy_Urick::command usePktErrorModel %d", use_pkt_error);
 			
 			return (TCL_OK);
 		}
@@ -243,6 +243,17 @@ int Sunset_Phy_Urick::command(int argc, const char * const * argv )
 			return TCL_OK;
 			
 		}
+
+		/* The "addToBlacklist" adds the specified node id to the black list. */
+		
+		if (strcmp(argv[1], "addToBlacklist") == 0) {
+			
+			blackList.insert(atoi(argv[2]));
+			
+			Sunset_Debug::debugInfo(3, phyAddress, "Sunset_Phy_Urick::command Blacklist %d", atoi(argv[2]));
+			
+			return (TCL_OK);
+		}
 	}
 	
 	return UnderwaterMPhyBpsk::command( argc, argv );
@@ -256,6 +267,8 @@ int Sunset_Phy_Urick::command(int argc, const char * const * argv )
 void Sunset_Phy_Urick::startTx(Packet* p) {
 	
 	double duration = 0;
+	
+	HDR_CMN(p)->prev_hop_ = phyAddress;
 	
 	if ( use_energy ) {
 		
@@ -338,6 +351,16 @@ void Sunset_Phy_Urick::startRx(Packet* p) {
 	double duration = 0.0;
 	double power = 0.0;
 	
+	if ( p != 0 ) {
+		
+		if ( blackList.find(HDR_CMN(p)->prev_hop_) != blackList.end() ) {
+		
+			Sunset_Debug::debugInfo(3, phyAddress, "Sunset_Phy_Urick::startRx blacklist %d", HDR_CMN(p)->prev_hop_);
+			
+			return;
+		}
+	}
+
 	Sunset_Debug::debugInfo(3, phyAddress, "Sunset_Phy_Urick::startRx - STATE %d", state);
 	
 	if ( state == IDLE ) {
@@ -414,6 +437,16 @@ void Sunset_Phy_Urick::endRx(Packet* p) {
 	
 	double duration = 0;
 	
+	if ( p != 0 ) {
+		
+		if ( blackList.find(HDR_CMN(p)->prev_hop_) != blackList.end() ) {
+		
+			Sunset_Debug::debugInfo(3, phyAddress, "Sunset_Phy_Urick::endRx blacklist %d", HDR_CMN(p)->prev_hop_);
+			
+			return;
+		}
+	}
+
 	if ( state == START_RX && NOW == endRx_ ) {
 		
 		duration = NOW - startRx_;
