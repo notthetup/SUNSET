@@ -607,7 +607,7 @@ proc finish {} {
 		set count_delay 0
 		for {set id 1} {$id <= $params(numNodes)} {incr id}  {
 			if { $params(sink) != $id } {
-				set rx_pkts [expr $rx_pkts + [$cbr_($id) getsentpkts]]
+				set rx_pkts [expr $rx_pkts + [$cbr_sink_($id) getrecvpkts]]
 				set aux     [$cbr_sink_($id) getftt]
 				if { $aux > 0 } {
 					set sink_delay [expr $sink_delay + $aux]
