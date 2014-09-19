@@ -655,7 +655,7 @@ proc finish {} {
 			puts "($id) 		time spent in rx            : [$energy($id) getRxTime]"
 			puts "($id) 		energy consumed in rx       : [$energy($id) getRxConsumption]"
 			puts "($id) 		time spent in tx            : [$energy($id) getTotTxTime]"
-			puts "($id) 		time consumed in tx         : [$energy($id) getTotTxConsumption]"
+			puts "($id) 		energy consumed in tx         : [$energy($id) getTotTxConsumption]"
 
 			puts ""
 
